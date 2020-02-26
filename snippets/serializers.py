@@ -1,10 +1,7 @@
 from rest_framework import serializers
 from snippets.models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
+from django.contrib.auth.models import User
 
-class SnippetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Snippet
-        fields = ['id', 'title', 'code', 'linenos', 'language', 'style']
 
 # class SnippetSerializer(serializers.Serializer):
 #     id = serializers.IntegerField(read_only=True)
@@ -13,6 +10,12 @@ class SnippetSerializer(serializers.ModelSerializer):
 #     linenos = serializers.BooleanField(required=False)
 #     language = serializers.ChoiceField(choices=LANGUAGE_CHOICES, default='python')
 #     style = serializers.ChoiceField(choices=STYLE_CHOICES, default='friendly')
+
+class SnippetSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
+    class Meta:
+        model = Snippet
+        fields = ['id', 'title', 'code', 'linenos', 'language', 'style', 'owner']
     """
     The first part of the serializer class defines the fields that get serialized/deserialized. 
     The create() and update() methods define how fully fledged instances are created or modified when calling serializer.save()
@@ -34,3 +37,10 @@ class SnippetSerializer(serializers.ModelSerializer):
         instance.style = validated_data.get('style', instance.style)
         instance.save()
         return instance
+
+class UserSerializer(serializers.ModelSerializer):
+    snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'snippets']
